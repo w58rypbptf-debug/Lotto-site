@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <nav class="navbar">
+    <nav class="navbar" id="navbar">
         <div class="nav-container">
             <h1 class="logo">🎰 Lucky Lotto</h1>
             <div class="nav-links">
@@ -15,12 +15,74 @@
                 <a href="#play" onclick="showSection('play')">Play Now</a>
                 <a href="#results" onclick="showSection('results')">Results</a>
                 <a href="#account" onclick="showSection('account')">Account</a>
+                <a href="#" class="user-info" id="userDisplay">
+                    <span id="userDisplayName">User</span>
+                </a>
             </div>
         </div>
     </nav>
 
+    <!-- Login Section -->
+    <section id="login" class="section active">
+        <div class="login-container">
+            <div class="login-box">
+                <h1>🎰 Lucky Lotto</h1>
+                
+                <div class="login-tabs">
+                    <button class="tab-btn active" onclick="switchLoginTab('signin')">Sign In</button>
+                    <button class="tab-btn" onclick="switchLoginTab('signup')">Sign Up</button>
+                </div>
+
+                <!-- Sign In Tab -->
+                <div id="signin-tab" class="login-tab active">
+                    <form onsubmit="handleSignIn(event)">
+                        <div class="form-group">
+                            <label for="signin-email">Email</label>
+                            <input type="email" id="signin-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="signin-password">Password</label>
+                            <input type="password" id="signin-password" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Sign In</button>
+                    </form>
+                    <div id="signin-message" class="message"></div>
+                    <p class="signup-link">Don't have an account? <a onclick="switchLoginTab('signup')">Sign up here</a></p>
+                </div>
+
+                <!-- Sign Up Tab -->
+                <div id="signup-tab" class="login-tab">
+                    <form onsubmit="handleSignUp(event)">
+                        <div class="form-group">
+                            <label for="signup-name">Full Name</label>
+                            <input type="text" id="signup-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-email">Email</label>
+                            <input type="email" id="signup-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-password">Password</label>
+                            <input type="password" id="signup-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="signup-confirm">Confirm Password</label>
+                            <input type="password" id="signup-confirm" required>
+                        </div>
+                        <div class="form-group checkbox">
+                            <input type="checkbox" id="terms" required>
+                            <label for="terms">I agree to the Terms & Conditions</label>
+                        </div>
+                        <button type="submit" class="btn-primary">Create Account</button>
+                    </form>
+                    <div id="signup-message" class="message"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Home Section -->
-    <section id="home" class="section active">
+    <section id="home" class="section">
         <div class="hero">
             <h1>Welcome to Lucky Lotto</h1>
             <p>Your chance to win big!</p>
