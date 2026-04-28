@@ -11,6 +11,10 @@ let gameState = {
     ]
 };
 
+// User state
+let currentUser = null;
+let isLoggedIn = false;
+
 // Load game state from localStorage
 function loadGameState() {
     const saved = localStorage.getItem('luckyLottoState');
@@ -19,19 +23,52 @@ function loadGameState() {
     }
 }
 
+// Load user from localStorage
+function loadUser() {
+    const user = localStorage.getItem('luckyLottoUser');
+    if (user) {
+        currentUser = JSON.parse(user);
+        isLoggedIn = true;
+        updateUserDisplay();
+    }
+}
+
 // Save game state to localStorage
 function saveGameState() {
     localStorage.setItem('luckyLottoState', JSON.stringify(gameState));
 }
 
+// Save user to localStorage
+function saveUser() {
+    if (currentUser) {
+        localStorage.setItem('luckyLottoUser', JSON.stringify(currentUser));
+    }
+}
+
 // Initialize the game
 function initGame() {
-    loadGameState();
-    createNumberGrid();
-    updateBalance();
-    updateTicketCount();
-    updateWinnings();
-    displayMyTickets();
+    loadUser();
+    
+    // If not logged in, show login section
+    if (!isLoggedIn) {
+        showSection('login');
+    } else {
+        loadGameState();
+        createNumberGrid();
+        updateBalance();
+        updateTicketCount();
+        updateWinnings();
+        displayMyTickets();
+        showSection('home');
+    }
+}
+
+// Update user display
+function updateUserDisplay() {
+    const userDisplayName = document.getElementById('userDisplayName');
+    if (userDisplayName && currentUser) {
+        userDisplayName.textContent = currentUser.name;
+    }
 }
 
 // Show/Hide sections
@@ -52,9 +89,141 @@ function showSection(sectionId) {
     window.scrollTo(0, 0);
 }
 
+// Switch login tabs
+function switchLoginTab(tab) {
+    // Hide all tabs
+    const tabs = document.querySelectorAll('.login-tab');
+    tabs.forEach(t => t.classList.remove('active'));
+    
+    // Hide all buttons active state
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(b => b.classList.remove('active'));
+    
+    // Show selected tab and button
+    const selectedTab = document.getElementById(tab + '-tab');
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+    }
+    
+    // Mark button as active
+    event.target.classList.add('active');
+    
+    // Clear messages
+    document.getElementById('signin-message').className = 'message';
+    document.getElementById('signup-message').className = 'message';
+}
+
+// Handle Sign In
+function handleSignIn(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('signin-email').value;
+    const password = document.getElementById('signin-password').value;
+    const messageDiv = document.getElementById('signin-message');
+    
+    // Validate inputs
+    if (!email || !password) {
+        showLoginMessage(messageDiv, 'Please fill in all fields', 'error');
+        return;
+    }
+    
+    // Check if user exists in localStorage
+    const users = JSON.parse(localStorage.getItem('luckyLottoUsers') || '[]');
+    const user = users.find(u => u.email === email && u.password === password);
+    
+    if (user) {
+        // Login successful
+        currentUser = {
+            name: user.name,
+            email: user.email
+        };
+        isLoggedIn = true;
+        saveUser();
+        loadGameState();
+        updateUserDisplay();
+        
+        showLoginMessage(messageDiv, '✅ Sign in successful! Redirecting...', 'success');
+        
+        setTimeout(() => {
+            createNumberGrid();
+            updateBalance();
+            updateTicketCount();
+            updateWinnings();
+            displayMyTickets();
+            showSection('home');
+        }, 1000);
+    } else {
+        showLoginMessage(messageDiv, '❌ Invalid email or password', 'error');
+    }
+}
+
+// Handle Sign Up
+function handleSignUp(event) {
+    event.preventDefault();
+    
+    const name = document.getElementById('signup-name').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const confirm = document.getElementById('signup-confirm').value;
+    const messageDiv = document.getElementById('signup-message');
+    
+    // Validate inputs
+    if (!name || !email || !password || !confirm) {
+        showLoginMessage(messageDiv, 'Please fill in all fields', 'error');
+        return;
+    }
+    
+    if (password.length < 6) {
+        showLoginMessage(messageDiv, 'Password must be at least 6 characters', 'error');
+        return;
+    }
+    
+    if (password !== confirm) {
+        showLoginMessage(messageDiv, 'Passwords do not match', 'error');
+        return;
+    }
+    
+    // Check if email already exists
+    const users = JSON.parse(localStorage.getItem('luckyLottoUsers') || '[]');
+    if (users.some(u => u.email === email)) {
+        showLoginMessage(messageDiv, 'Email already registered', 'error');
+        return;
+    }
+    
+    // Create new user
+    const newUser = { name, email, password };
+    users.push(newUser);
+    localStorage.setItem('luckyLottoUsers', JSON.stringify(users));
+    
+    // Auto login
+    currentUser = { name, email };
+    isLoggedIn = true;
+    saveUser();
+    
+    showLoginMessage(messageDiv, '✅ Account created! Redirecting...', 'success');
+    
+    setTimeout(() => {
+        createNumberGrid();
+        updateBalance();
+        updateTicketCount();
+        updateWinnings();
+        displayMyTickets();
+        updateUserDisplay();
+        showSection('home');
+    }, 1000);
+}
+
+// Show login message
+function showLoginMessage(element, message, type) {
+    element.textContent = message;
+    element.className = `message ${type}`;
+}
+
 // Create number grid (1-49)
 function createNumberGrid() {
     const grid = document.getElementById('numberGrid');
+    if (!grid) return;
+    
     grid.innerHTML = '';
     
     for (let i = 1; i <= 49; i++) {
@@ -277,6 +446,8 @@ function addFunds() {
 // Show message
 function showMessage(message, type) {
     const messageDiv = document.getElementById('ticketMessage');
+    if (!messageDiv) return;
+    
     messageDiv.textContent = message;
     messageDiv.className = `message show ${type}`;
     
@@ -287,10 +458,23 @@ function showMessage(message, type) {
 
 // Logout
 function logout() {
-    if (confirm('Are you sure you want to logout? Your data will be saved.')) {
+    if (confirm('Are you sure you want to logout?')) {
         saveGameState();
-        localStorage.clear();
-        location.reload();
+        localStorage.removeItem('luckyLottoUser');
+        isLoggedIn = false;
+        currentUser = null;
+        gameState = {
+            balance: 250.00,
+            selectedNumbers: [],
+            tickets: [],
+            totalWinnings: 0.00,
+            drawResults: [
+                { draw: 1001, numbers: [12, 24, 35, 41, 47, 49], date: '2026-04-25' },
+                { draw: 1000, numbers: [5, 18, 28, 33, 42, 45], date: '2026-04-18' },
+                { draw: 999, numbers: [3, 19, 29, 37, 43, 48], date: '2026-04-11' }
+            ]
+        };
+        showSection('login');
     }
 }
 
